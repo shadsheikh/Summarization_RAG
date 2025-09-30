@@ -3,3 +3,7 @@
 .vscode
 data/chroma_db
 data/parsed
+__pycache__/
+*.py[cod]
+*$py.class
+__init__.py
