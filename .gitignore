@@ -1,0 +1,5 @@
+.venv
+.env
+.vscode
+data/chroma_db
+data/parsed
