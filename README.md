@@ -1,3 +1,9 @@
-Pinecode = "pcsk_6YBBUX_GhZrDQUxAQ2ew2a5hmsxvucNAYb5Pr1m3BjzLB1J6P8C5JRJnZM4u6v857mTdyU"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+uvicorn src.api:app --reload
 
-pcsk_6YBBUX_GhZrDQUxAQ2ew2a5hmsxvucNAYb5Pr1m3BjzLB1J6P8C5JRJnZM4u6v857mTdyU
+## Create .env
+
+PYTHONPATH=src/

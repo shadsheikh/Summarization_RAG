@@ -9,6 +9,4 @@ def extract_text(pdf_path: str) -> str:
             if page_text:
                 text += page_text + "\n"
 
-    with open("data/parsed/ingest.txt", "w", encoding="utf-8") as f:
-        f.write(text)
     return text
