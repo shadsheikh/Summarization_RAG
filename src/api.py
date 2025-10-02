@@ -7,6 +7,9 @@ from transformers import pipeline
 import sys
 import os
 import chromadb
+from pydantic import BaseModel
+from fastapi import Body
+from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize client (local, persisted in ./chroma)
 chroma_client = chromadb.PersistentClient(path="data/chroma_db")
@@ -21,8 +24,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  #
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 qa_pipeline = pipeline("question-answering",
-                       model="deepset/roberta-base-squad2")
+                       model="distilbert-base-cased-distilled-squad")
 
 
 @app.post("/upload")
@@ -50,8 +61,15 @@ async def upload(file: UploadFile = File(...)):
     return {"status": "ok", "num_chunks": len(chunks), "filename": file.filename}
 
 
+class SummarizeRequest(BaseModel):
+    document_id: str
+    style: str = "brief"
+
+
 @app.post("/summarize")
-async def summarize(document_id: str, style: str = "brief"):
+async def summarize(request: SummarizeRequest):
+    document_id = request.document_id
+    style = request.style
     # Get most relevant chunks from ChromaDB
     query_embedding = embedder.encode(
         [document_id], convert_to_numpy=True).tolist()
@@ -87,16 +105,22 @@ async def summarize(document_id: str, style: str = "brief"):
     return {"summary": final_summary}
 
 
+class AskRequest(BaseModel):
+    question: str
+
+
 @app.post("/ask")
-async def ask(question: str):
+async def ask(request: AskRequest):
     # Embed the question
+    question = request.question
+
     query_embedding = embedder.encode(
         [question], convert_to_numpy=True).tolist()
 
     # Search top 3 relevant chunks
     results = collection.query(
         query_embeddings=query_embedding,
-        n_results=3
+        n_results=5
     )
 
     selected_chunks = results["documents"][0]
@@ -105,7 +129,7 @@ async def ask(question: str):
     context = " ".join(selected_chunks)
 
     # Get answer from QA pipeline
-    result = qa_pipeline({"question": question, "context": context})
+    result = qa_pipeline(question=question, context=context)
     answer = result["answer"]
 
     return {"question": question, "answer": answer}
